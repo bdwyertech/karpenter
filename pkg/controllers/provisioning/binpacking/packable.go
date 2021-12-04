@@ -54,6 +54,7 @@ func PackablesFor(ctx context.Context, instanceTypes []cloudprovider.InstanceTyp
 			packable.validateInstanceType(schedule),
 			packable.validateArchitecture(schedule),
 			packable.validateCapacityTypes(schedule),
+			packable.validateAWSPodENI(schedule),
 			// Although this will remove instances that have GPUs when
 			// not required, removal of instance types that *lack*
 			// GPUs will be done later.
@@ -227,6 +228,20 @@ func (p *Packable) validateAWSNeurons(schedule *scheduling.Schedule) error {
 		}
 	}
 	return fmt.Errorf("aws neuron is not required")
+}
+
+func (p *Packable) validateAWSPodENI(schedule *scheduling.Schedule) error {
+	if p.InstanceType.AWSPodENI() {
+		return nil
+	}
+	for _, pod := range schedule.Pods {
+		for _, container := range pod.Spec.Containers {
+			if _, ok := container.Resources.Requests[resources.AWSPodENI]; ok {
+				return nil
+			}
+		}
+	}
+	return fmt.Errorf("aws pod eni is not required")
 }
 
 func packableNames(instanceTypes []*Packable) []string {

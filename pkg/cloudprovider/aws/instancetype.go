@@ -16,6 +16,7 @@ package aws
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -68,6 +69,12 @@ func (i *InstanceType) Pods() *resource.Quantity {
 	// max number of ENIs * (IPv4 Addresses per ENI -1) + 2
 	// https://github.com/awslabs/amazon-eks-ami/blob/master/files/eni-max-pods.txt#L20
 	return resources.Quantity(fmt.Sprint(*i.NetworkInfo.MaximumNetworkInterfaces*(*i.NetworkInfo.Ipv4AddressesPerInterface-1) + 2))
+}
+
+func (i *InstanceType) AWSPodENI() bool {
+	// Pod ENI is supported by Bare Metal & all Nitro except T3
+	// https://docs.aws.amazon.com/eks/latest/userguide/security-groups-for-pods.html#supported-instance-types
+	return (i.BareMetal != nil && *i.BareMetal) || (i.Hypervisor != nil && *i.Hypervisor == "nitro" && !strings.HasPrefix(*i.InstanceType, "t3"))
 }
 
 func (i *InstanceType) NvidiaGPUs() *resource.Quantity {

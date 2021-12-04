@@ -74,7 +74,7 @@ func (i *InstanceType) Pods() *resource.Quantity {
 func (i *InstanceType) AWSPodENI() bool {
 	// Pod ENI is supported by Bare Metal & all Nitro except T3
 	// https://docs.aws.amazon.com/eks/latest/userguide/security-groups-for-pods.html#supported-instance-types
-	return *i.BareMetal || (*i.Hypervisor == "nitro" && !strings.HasPrefix(*i.InstanceType, "t3"))
+	return (i.BareMetal != nil && *i.BareMetal) || (i.Hypervisor != nil && *i.Hypervisor == "nitro" && !strings.HasPrefix(*i.InstanceType, "t3"))
 }
 
 func (i *InstanceType) NvidiaGPUs() *resource.Quantity {

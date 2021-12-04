@@ -121,6 +121,23 @@ var _ = Describe("Allocation", func() {
 
 	Context("Reconciliation", func() {
 		Context("Specialized Hardware", func() {
+			It("should not launch AWS Pod ENI on a t3", func() {
+				nodeNames := sets.NewString()
+				for _, pod := range ExpectProvisioned(ctx, env.Client, scheduler, provisioners, provisioner,
+					test.UnschedulablePod(test.PodOptions{
+						NodeSelector: map[string]string{v1.LabelInstanceTypeStable: "t3.large"},
+						// ResourceRequirements: v1.ResourceRequirements{
+						// 	Requests: v1.ResourceList{resources.NvidiaGPU: resource.MustParse("1")},
+						// 	Limits:   v1.ResourceList{resources.NvidiaGPU: resource.MustParse("1")},
+						// },
+					})) {
+					node := ExpectScheduled(ctx, env.Client, pod)
+					Expect(node.Labels).To(HaveKeyWithValue(v1.LabelInstanceTypeStable, "p3.8xlarge"))
+					nodeNames.Insert(node.Name)
+				}
+				Expect(nodeNames.Len()).To(Equal(2))
+			})
+
 			It("should launch instances for Nvidia GPU resource requests", func() {
 				nodeNames := sets.NewString()
 				for _, pod := range ExpectProvisioned(ctx, env.Client, scheduler, provisioners, provisioner,

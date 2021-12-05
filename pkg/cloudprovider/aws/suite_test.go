@@ -100,13 +100,13 @@ var _ = AfterSuite(func() {
 	Expect(env.Stop()).To(Succeed(), "Failed to stop environment")
 })
 
-var _ = Describe("Allocation", func() {
+var _ = Describe("AllocationPodENI", func() {
 	var provisioner *v1alpha5.Provisioner
 	var provider *v1alpha1.AWS
 
 	BeforeEach(func() {
 		provider = &v1alpha1.AWS{
-			InstanceProfile: "test-instance-profile",
+			InstanceProfile: "pod-eni-instance-profile",
 		}
 		provisioner = ProvisionerWithProvider(&v1alpha5.Provisioner{ObjectMeta: metav1.ObjectMeta{Name: v1alpha5.DefaultProvisioner.Name}}, provider)
 		provisioner.SetDefaults(ctx)
@@ -132,6 +132,31 @@ var _ = Describe("Allocation", func() {
 					ExpectNotScheduled(ctx, env.Client, pod)
 				}
 			})
+		})
+	})
+})
+
+var _ = Describe("Allocation", func() {
+	var provisioner *v1alpha5.Provisioner
+	var provider *v1alpha1.AWS
+
+	BeforeEach(func() {
+		provider = &v1alpha1.AWS{
+			InstanceProfile: "test-instance-profile",
+		}
+		provisioner = ProvisionerWithProvider(&v1alpha5.Provisioner{ObjectMeta: metav1.ObjectMeta{Name: v1alpha5.DefaultProvisioner.Name}}, provider)
+		provisioner.SetDefaults(ctx)
+		fakeEC2API.Reset()
+		launchTemplateCache.Flush()
+		unavailableOfferingsCache.Flush()
+	})
+
+	AfterEach(func() {
+		ExpectProvisioningCleanedUp(ctx, env.Client, provisioners)
+	})
+
+	Context("Reconciliation", func() {
+		Context("Specialized Hardware", func() {
 			It("should launch instances for Nvidia GPU resource requests", func() {
 				nodeNames := sets.NewString()
 				for _, pod := range ExpectProvisioned(ctx, env.Client, scheduler, provisioners, provisioner,

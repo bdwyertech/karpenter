@@ -88,6 +88,7 @@ func PackableFor(i cloudprovider.InstanceType) *Packable {
 			resources.NvidiaGPU: *i.NvidiaGPUs(),
 			resources.AMDGPU:    *i.AMDGPUs(),
 			resources.AWSNeuron: *i.AWSNeurons(),
+			resources.AWSPodENI: *i.AWSPodENI(),
 			v1.ResourcePods:     *i.Pods(),
 		},
 	}
@@ -231,17 +232,17 @@ func (p *Packable) validateAWSNeurons(schedule *scheduling.Schedule) error {
 }
 
 func (p *Packable) validateAWSPodENI(schedule *scheduling.Schedule) error {
-	if p.InstanceType.AWSPodENI() {
-		return nil
-	}
 	for _, pod := range schedule.Pods {
 		for _, container := range pod.Spec.Containers {
 			if _, ok := container.Resources.Requests[resources.AWSPodENI]; ok {
+				if p.InstanceType.AWSPodENI().IsZero() {
+					return fmt.Errorf("aws pod eni is required")
+				}
 				return nil
 			}
 		}
 	}
-	return fmt.Errorf("aws pod eni is not required")
+	return nil
 }
 
 func packableNames(instanceTypes []*Packable) []string {

@@ -68,7 +68,7 @@ type InstanceTypeOptions struct {
 	nvidiaGPUs   resource.Quantity
 	amdGPUs      resource.Quantity
 	awsNeurons   resource.Quantity
-	awsPodENI    bool
+	awsPodENI    resource.Quantity
 }
 
 type InstanceType struct {
@@ -111,8 +111,8 @@ func (i *InstanceType) AWSNeurons() *resource.Quantity {
 	return &i.awsNeurons
 }
 
-func (i *InstanceType) AWSPodENI() bool {
-	return i.awsPodENI
+func (i *InstanceType) AWSPodENI() *resource.Quantity {
+	return &i.awsPodENI
 }
 
 func (i *InstanceType) Overhead() v1.ResourceList {

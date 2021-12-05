@@ -126,7 +126,10 @@ var _ = Describe("Allocation", func() {
 					test.UnschedulablePod(test.PodOptions{
 						NodeSelector: map[string]string{
 							v1.LabelInstanceTypeStable: "t3.large",
-							resources.AWSPodENI:        "true",
+						},
+						ResourceRequirements: v1.ResourceRequirements{
+							Requests: v1.ResourceList{resources.AWSPodENI: resource.MustParse("1")},
+							Limits:   v1.ResourceList{resources.AWSPodENI: resource.MustParse("1")},
 						},
 					})) {
 					ExpectNotScheduled(ctx, env.Client, pod)

@@ -84,7 +84,7 @@ func (c *CloudProvider) GetInstanceTypes(_ context.Context, _ *v1alpha5.Constrai
 		}),
 		NewInstanceType(InstanceTypeOptions{
 			name:      "pod-eni-instance-type",
-			awsPodENI: true,
+			awsPodENI: resource.MustParse("1"),
 		}),
 		NewInstanceType(InstanceTypeOptions{
 			name:   "small-instance-type",

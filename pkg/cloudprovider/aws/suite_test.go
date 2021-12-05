@@ -124,9 +124,13 @@ var _ = Describe("Allocation", func() {
 			It("should not launch AWS Pod ENI on a t3", func() {
 				for _, pod := range ExpectProvisioned(ctx, env.Client, scheduler, provisioners, provisioner,
 					test.UnschedulablePod(test.PodOptions{
-						NodeSelector: map[string]string{
-							v1.LabelInstanceTypeStable: "t3.large",
-							resources.AWSPodENI:        "true",
+						// NodeSelector: map[string]string{
+						// 	v1.LabelInstanceTypeStable: "t3.large",
+						// 	resources.AWSPodENI:        "true",
+						// },
+						NodeRequirements: []v1.NodeSelectorRequirement{
+							{Key: resources.AWSPodENI, Operator: v1.NodeSelectorOpIn, Values: []string{"true"}},
+							{Key: v1.LabelInstanceTypeStable, Operator: v1.NodeSelectorOpIn, Values: []string{"t3.large"}},
 						},
 					})) {
 					ExpectNotScheduled(ctx, env.Client, pod)

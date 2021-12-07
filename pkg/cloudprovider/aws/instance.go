@@ -34,6 +34,7 @@ import (
 	"github.com/aws/karpenter/pkg/cloudprovider"
 	"github.com/aws/karpenter/pkg/cloudprovider/aws/apis/v1alpha1"
 	"github.com/aws/karpenter/pkg/utils/injection"
+	"github.com/aws/karpenter/pkg/utils/resources"
 )
 
 type InstanceProvider struct {
@@ -236,11 +237,17 @@ func (p *InstanceProvider) instanceToNode(instance *ec2.Instance, instanceTypes 
 			return &v1.Node{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: aws.StringValue(instance.PrivateDnsName),
-					Labels: map[string]string{
-						v1.LabelTopologyZone:       aws.StringValue(instance.Placement.AvailabilityZone),
-						v1.LabelInstanceTypeStable: aws.StringValue(instance.InstanceType),
-						v1alpha5.LabelCapacityType: getCapacityType(instance),
-					},
+					Labels: func() (labels map[string]string) {
+						labels = map[string]string{
+							v1.LabelTopologyZone:       aws.StringValue(instance.Placement.AvailabilityZone),
+							v1.LabelInstanceTypeStable: aws.StringValue(instance.InstanceType),
+							v1alpha5.LabelCapacityType: getCapacityType(instance),
+						}
+						if !instanceType.AWSPodENI().IsZero() {
+							labels[resources.AWSPodENI] = "true"
+						}
+						return
+					}(),
 				},
 				Spec: v1.NodeSpec{
 					ProviderID: fmt.Sprintf("aws:///%s/%s", aws.StringValue(instance.Placement.AvailabilityZone), aws.StringValue(instance.InstanceId)),

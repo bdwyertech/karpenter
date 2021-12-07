@@ -135,6 +135,18 @@ var _ = Describe("Allocation", func() {
 					ExpectNotScheduled(ctx, env.Client, pod)
 				}
 			})
+			It("should label nodes with AWS Pod ENI support", func() {
+				for _, pod := range ExpectProvisioned(ctx, env.Client, scheduler, provisioners, provisioner,
+					test.UnschedulablePod(test.PodOptions{
+						ResourceRequirements: v1.ResourceRequirements{
+							Requests: v1.ResourceList{resources.AWSPodENI: resource.MustParse("1")},
+							Limits:   v1.ResourceList{resources.AWSPodENI: resource.MustParse("1")},
+						},
+					})) {
+					node := ExpectScheduled(ctx, env.Client, pod)
+					Expect(node.Labels).To(HaveKeyWithValue(resources.AWSPodENI, "true"))
+				}
+			})
 			It("should launch instances for Nvidia GPU resource requests", func() {
 				nodeNames := sets.NewString()
 				for _, pod := range ExpectProvisioned(ctx, env.Client, scheduler, provisioners, provisioner,

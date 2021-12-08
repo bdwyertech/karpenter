@@ -16,8 +16,8 @@ package aws
 
 import (
 	"fmt"
-	"strings"
 
+	"github.com/aws/amazon-vpc-resource-controller-k8s/pkg/aws/vpc"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/karpenter/pkg/cloudprovider"
@@ -72,10 +72,10 @@ func (i *InstanceType) Pods() *resource.Quantity {
 }
 
 func (i *InstanceType) AWSPodENI() *resource.Quantity {
-	// Pod ENI is supported by Bare Metal & all Nitro except T3
 	// https://docs.aws.amazon.com/eks/latest/userguide/security-groups-for-pods.html#supported-instance-types
-	if aws.BoolValue(i.BareMetal) || (aws.StringValue(i.Hypervisor) == "nitro" && !strings.HasPrefix(*i.InstanceType, "t3")) {
-		return i.Pods()
+	limits, ok := vpc.Limits[aws.StringValue(i.InstanceType)]
+	if ok && limits.IsTrunkingCompatible {
+		return resources.Quantity(fmt.Sprint(limits.BranchInterface))
 	}
 	return resources.Quantity("0")
 }

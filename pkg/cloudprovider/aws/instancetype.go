@@ -70,6 +70,13 @@ func (i *InstanceType) Memory() *resource.Quantity {
 }
 
 func (i *InstanceType) Pods() *resource.Quantity {
+	if *i.Hypervisor == "nitro" {
+		// max number of ENIs * ((IPv4 Addresses per ENI -1) * IPv4 per Prefix) + 2
+		// IP's per prefix is currently 16
+		// https://github.com/awslabs/amazon-eks-ami/blob/master/files/max-pods-calculator.sh
+		ips_per_prefix := int64(16)
+		return resources.Quantity(fmt.Sprint(*i.NetworkInfo.MaximumNetworkInterfaces*((*i.NetworkInfo.Ipv4AddressesPerInterface-1)*ips_per_prefix) + 2))
+	}
 	// The number of pods per node is calculated using the formula:
 	// max number of ENIs * (IPv4 Addresses per ENI -1) + 2
 	// https://github.com/awslabs/amazon-eks-ami/blob/master/files/eni-max-pods.txt#L20
